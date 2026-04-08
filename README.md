@@ -153,26 +153,26 @@ curl -X POST http://localhost:7860/step \
 
 ```bash
 # With OpenAI
-API_BASE_URL=https://api.openai.com/v1 \
-MODEL_NAME=gpt-4o-mini \
-HF_TOKEN=hf_your_token \
-python inference.py
+OPENAI_API_KEY=sk-...  MODEL_NAME=gpt-4o-mini  API_BASE_URL=https://api.openai.com/v1 python inference.py
 
-# With a local model (e.g. LM Studio)
-API_BASE_URL=http://localhost:1234/v1 \
-MODEL_NAME=local-model \
-HF_TOKEN=dummy \
+# With HF Inference Providers
+HF_TOKEN=hf_...  MODEL_NAME=openai/gpt-oss-120b  API_BASE_URL=https://router.huggingface.co/v1 python inference.py
+
+# With a local model (e.g. LM Studio, Ollama)
+HF_TOKEN=dummy  MODEL_NAME=local-model  API_BASE_URL=http://localhost:1234/v1 python inference.py
+
+# Or via .env file (copy .env.example → .env and fill in values)
 python inference.py
 ```
 
 The script runs all three tasks in sequence and prints structured logs:
 
 ```
-[START] {"task_id": "easy", "model": "gpt-4o-mini", "timestamp": "2026-04-07T00:00:00+00:00"}
-[STEP]  {"task_id": "easy", "step": 1, "claim": "...", "verdict": "FALSE", "reward": 1.0, "cumulative_reward": 1.0}
-[STEP]  {"task_id": "easy", "step": 2, ...}
-[STEP]  {"task_id": "easy", "step": 3, ...}
-[END]   {"task_id": "easy", "total_steps": 3, "final_score": 2.7, "avg_reward": 0.9}
+[START] task=easy env=misinformation model=gpt-4o-mini
+[STEP] step=1 action=FALSE reward=1.00 done=false error=null
+[STEP] step=2 action=TRUE reward=1.00 done=false error=null
+[STEP] step=3 action=FALSE reward=1.00 done=true error=null
+[END] success=true steps=3 score=1.00 rewards=1.00,1.00,1.00
 ```
 
 ---
@@ -216,13 +216,23 @@ client = FactCheckEnvClient.from_hub("your-username/misinformation-env", task_id
 
 ---
 
-## Baseline Results (Llama-3.1-8B-Instruct)
+## Baseline Results
 
-| Task   |Steps | Score  | Avg Reward |
-|--------|------|--------|------------|
-| easy   | 3    | 0.3333 | 0.3333     |
-| medium | 5    | 0.4000 | 0.4000     |
-| hard   | 7    | 0.5714 | 0.5714     |
+Scores produced by running `python inference.py` against a live server (`gpt-oss-120b` via HF Inference Providers router). Score = `cumulative_reward / max_steps`, normalized to `[0, 1]`.
+
+| Task   | Steps | Score  | Avg Reward |
+|--------|------:|-------:|-----------:|
+| easy   | 3     | 1.0000 | 1.0000     |
+| medium | 5     | 0.9200 | 0.9200     |
+| hard   | 7     | 0.7571 | 0.7571     |
+
+To reproduce:
+
+```bash
+cp .env.example .env          # fill in your HF_TOKEN / OPENAI_API_KEY
+uvicorn lazarus.server.app:app --host 0.0.0.0 --port 7860 &
+python inference.py
+```
 
 ---
 

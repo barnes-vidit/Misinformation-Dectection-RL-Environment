@@ -112,22 +112,53 @@ class MisinformationEnvironment(Environment):
         self,
         action: FactCheckAction,
         timeout_s: float | None = None,
+        episode_id: str | None = None,
+        step_index: int | None = None,
+        task_id: str | None = None,
         **kwargs,
     ) -> FactCheckObservation:
         """
         Execute one step: grade the action, update state, return next observation.
 
-        Reward and done are embedded in the returned FactCheckObservation.
-        State persists within a WebSocket session across multiple steps.
+        HTTP stateless mode: openenv-core creates a fresh env per /step call.
+        The client passes back episode_id + step_index + task_id so we can
+        reconstruct the exact claim list (deterministic shuffle from episode_id)
+        and jump to the correct claim position — no server-side session needed.
 
-        In HTTP mode (stateless), the env is fresh per call. In that case,
-        done is computed from self._state.step_count vs _max_steps, which gives
-        done=True after exactly one step in HTTP mode (step_count=1, max_steps=3).
-        For the HTTP eval loop, inference.py tracks steps client-side.
+        WebSocket mode: state persists normally across steps.
         """
         try:
+            # ---------------------------------------------------------------
+            # Stateless HTTP reconstruction
+            # If called on a fresh env (self._state is None) AND the client
+            # provided episode context, reconstruct deterministically.
+            # ---------------------------------------------------------------
             if self._state is None or not self._current_claims:
-                self.reset()
+                if episode_id is not None and step_index is not None:
+                    # Use client-supplied task_id if valid
+                    active_task = (
+                        task_id if (task_id and task_id in _VALID_TASKS) else self.task_id
+                    )
+                    claims = get_claims_for_task(active_task)
+                    rng = random.Random(episode_id)
+                    rng.shuffle(claims)
+
+                    self.task_id = active_task
+                    self._max_steps = _MAX_STEPS[active_task]
+                    self._current_claims = claims
+                    self._claim_index = step_index  # jump to the right position
+                    self._last_feedback = ""
+                    self._state = FactCheckState(
+                        episode_id=episode_id,
+                        task_id=active_task,
+                        step_count=step_index,
+                        cumulative_reward=0.0,
+                        claims_seen=step_index,
+                        correct_verdicts=0,
+                    )
+                else:
+                    # Fallback: no context provided, reset with defaults
+                    self.reset()
 
             current_claim = self._current_claims[self._claim_index]
             reward = grade_action(action, current_claim, self.task_id)
@@ -179,6 +210,7 @@ class MisinformationEnvironment(Environment):
 
         except Exception as exc:  # noqa: BLE001
             return self._fallback_observation(f"step() error: {exc}")
+
 
     @property
     def state(self) -> FactCheckState:
