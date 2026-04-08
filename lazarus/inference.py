@@ -502,7 +502,11 @@ def run_task(task_id: str, base_url: str) -> dict:
     # Normalize score to [0, 1]: cumulative / max_possible (1.0 per step)
     max_possible = float(max_steps)
     normalized_score = cumulative_reward / max_possible if max_possible > 0 else 0.0
-    normalized_score = max(0.0, min(1.0, normalized_score))
+    # Validator requires score strictly in (0.0, 1.0) — exactly 0.0 or 1.0 are rejected.
+    # Clamp with epsilon so a perfect run → 0.999, a zero run → 0.001.
+    _EPS = 0.001
+    normalized_score = max(_EPS, min(1.0 - _EPS, normalized_score))
+
 
     log_end(success=success, steps=step_number, score=normalized_score, rewards=rewards_list)
     return {
