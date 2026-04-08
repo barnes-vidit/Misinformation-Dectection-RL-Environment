@@ -1,3 +1,12 @@
+---
+title: Misinformation Detection Environment
+emoji: 🤖
+colorFrom: blue
+colorTo: green
+sdk: docker
+app_port: 7860
+---
+
 # Misinformation Detection Environment
 
 > **OpenEnv Hackathon Submission** — Meta × Hugging Face OpenEnv AI Hackathon (India, April 2026)
