@@ -64,10 +64,11 @@ dist_check/
 
 baseline_scores.txt
 baseline_scores_v2.txt
+baseline_scores_live.txt
 
 # Root-level test scripts (not part of submission package)
 check_inference.py
 test_done.py
 test_log_format.py
 validate.py
-validate_e2e.py
+validate_e2e.py

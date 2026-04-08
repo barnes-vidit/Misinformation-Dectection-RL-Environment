@@ -39,18 +39,16 @@ import requests
 from openai import OpenAI
 
 # ---------------------------------------------------------------------------
-# Configuration
+# Configuration — follows the required hackathon pattern exactly:
+#   API_BASE_URL and MODEL_NAME have defaults; HF_TOKEN has NO default.
 # ---------------------------------------------------------------------------
 
-API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://api.openai.com/v1")
-MODEL_NAME: str = os.environ.get("MODEL_NAME", "gpt-4o-mini")
-# Accept both OPENAI_API_KEY (guideline standard) and HF_TOKEN (HF router)
-HF_TOKEN: str = (
-    os.environ.get("OPENAI_API_KEY")
-    or os.environ.get("HF_TOKEN")
-    or ""
-)
+API_BASE_URL: str = os.environ.get("API_BASE_URL", "https://router.huggingface.co/v1")
+MODEL_NAME: str = os.environ.get("MODEL_NAME", "meta-llama/Llama-3.1-8B-Instruct")
+HF_TOKEN: str | None = os.environ.get("HF_TOKEN")          # NO default — must be set
+LOCAL_IMAGE_NAME: str | None = os.environ.get("LOCAL_IMAGE_NAME")  # optional
 SERVER_URL: str = os.environ.get("SERVER_URL", "http://localhost:7860")
+
 
 TASKS: list[str] = ["easy", "medium", "hard"]
 MAX_STEPS_BY_TASK: dict[str, int] = {"easy": 3, "medium": 5, "hard": 7}
@@ -221,10 +219,11 @@ def log_start(task_id: str) -> None:
     print(f"[START] task={task_id} env=misinformation model={MODEL_NAME}", flush=True)
 
 
-def log_step(step: int, action: str, reward: float, done: bool) -> None:
+def log_step(step: int, action: str, reward: float, done: bool, error: str | None = None) -> None:
+    error_val = error if error else "null"
     print(
         f"[STEP] step={step} action={action} reward={reward:.2f} "
-        f"done={str(done).lower()} error=null",
+        f"done={str(done).lower()} error={error_val}",
         flush=True,
     )
 
@@ -233,7 +232,7 @@ def log_end(success: bool, steps: int, score: float, rewards: list) -> None:
     rewards_str = ",".join(f"{r:.2f}" for r in rewards)
     print(
         f"[END] success={str(success).lower()} steps={steps} "
-        f"score={score:.2f} rewards={rewards_str}",
+        f"score={score:.3f} rewards={rewards_str}",
         flush=True,
     )
 
@@ -491,6 +490,7 @@ def run_task(task_id: str, base_url: str) -> dict:
             action=action_dict["verdict"],
             reward=reward,
             done=done,
+            error=None,
         )
 
         current_obs = next_obs
