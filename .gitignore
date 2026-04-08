@@ -1,0 +1,65 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg
+*.egg-info/
+dist/
+build/
+eggs/
+parts/
+var/
+sdist/
+develop-eggs/
+.installed.cfg
+lib/
+lib64/
+
+# Virtual environments
+.venv/
+venv/
+ENV/
+env/
+
+# uv
+.uv/
+uv.lock          # keep this if you want reproducible installs, remove if not
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Environment variables / secrets
+.env
+.env.*
+!.env.example
+
+# Docker
+*.tar
+
+# Logs / debug artifacts
+server_out.txt
+server_err.txt
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# dist_check (local build artifacts)
+dist_check/
+
+# HF / deployment artifacts
+*.hf_token
+
+baseline_scores.txt

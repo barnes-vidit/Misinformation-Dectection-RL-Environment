@@ -1,0 +1,46 @@
+# OpenEnv Hackathon Submission — Meta × Hugging Face (India, April 2026)
+# Follows the canonical echo_env / chess_env pyproject.toml pattern exactly.
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "misinformation-env"
+version = "0.1.0"
+description = "OpenEnv misinformation detection environment for AI fact-checking agents"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core>=0.2.2",
+    "fastapi>=0.110.0",
+    "uvicorn[standard]>=0.29.0",
+    "pydantic>=2.0.0",
+    "openai>=1.0.0",
+    "requests>=2.31.0",
+    "websockets>=12.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+    "httpx>=0.27.0",
+]
+
+[project.scripts]
+# uv run server  OR  python -m lazarus.server.app
+server = "lazarus.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+# pyproject.toml lives inside lazarus/ — mirror the echo_env canonical pattern:
+#   "lazarus"        → .        (the project root = the lazarus package)
+#   "lazarus.server" → server   (the server/ subdirectory)
+packages = ["lazarus", "lazarus.server"]
+package-dir = {"lazarus" = ".", "lazarus.server" = "server"}
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]

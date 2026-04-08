@@ -1,0 +1,64 @@
+name: misinformation-detection-env
+version: "0.1.0"
+description: >
+  An OpenEnv environment for training and evaluating AI agents on misinformation
+  and fake-news detection through structured fact-checking of fictional news claims.
+  Agents must classify claims as TRUE, FALSE, MISLEADING, or UNVERIFIABLE and
+  justify their verdict with evidence from a provided article snippet.
+author: "Vidit Sharma"
+tags:
+  - openenv
+  - fact-checking
+  - misinformation
+  - nlp
+  - real-world
+  - reasoning
+
+tasks:
+  - id: easy
+    description: "Clearly true or false claims with obvious clues in the snippet. 3 steps per episode."
+    difficulty: easy
+    max_steps: 3
+
+  - id: medium
+    description: >
+      Nuanced claims requiring careful reading — MISLEADING verdicts are common.
+      Topics include cherry-picked statistics, misattributed quotes, and partial truths.
+      5 steps per episode.
+    difficulty: medium
+    max_steps: 5
+
+  - id: hard
+    description: >
+      Complex multi-evidence claims requiring cross-referencing across the snippet.
+      Some claims are UNVERIFIABLE (insufficient information). Overconfidence is penalised.
+      7 steps per episode.
+    difficulty: hard
+    max_steps: 7
+
+action_space:
+  type: structured
+  fields:
+    verdict: "str — one of TRUE / FALSE / MISLEADING / UNVERIFIABLE"
+    confidence: "float — agent confidence in verdict, range 0.0 (uncertain) to 1.0 (certain)"
+    reasoning: "str — 1-3 sentence justification of the verdict"
+    evidence_cited: "list[str] — key phrases extracted from the article snippet"
+
+observation_space:
+  type: structured
+  fields:
+    claim: "str — the news headline or claim to fact-check"
+    article_snippet: "str — 150-300 words of contextual article text"
+    source_metadata: "dict — {outlet: str, date: str, topic: str}"
+    task_id: "str — easy | medium | hard"
+    step_number: "int — current step index (1-indexed)"
+    max_steps: "int — maximum steps for this difficulty level"
+    previous_feedback: "str — feedback from last step, empty on first step"
+
+reward:
+  range: [0.0, 1.0]
+  description: >
+    Per-step reward computed by a deterministic grader.
+    Easy: +1.0 correct verdict, +0.3 evidence bonus, -0.2 overconfidence penalty.
+    Medium: +1.0 exact match; partial credit 0.3–0.6 for wrong verdict with nuanced reasoning.
+    Hard: +1.0 correct; -0.3 overconfidence on UNVERIFIABLE claims; +0.3 evidence bonus.
